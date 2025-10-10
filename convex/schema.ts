@@ -1,15 +1,25 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
+  ...authTables,
+
   users: defineTable({
     name: v.string(),
     tokenIdentifier: v.string(),
-  }).index("by_token", ["tokenIdentifier"]),
+    approved: v.optional(v.boolean()),
+    role: v.optional(v.string()),
+    email: v.string(),
+  })
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_email", ["email"]),
+
   categories: defineTable({
     name: v.string(),
     slug: v.string(),
   }).index("by_slug", ["slug"]),
+
   items: defineTable({
     body: v.string(),
     totalCount: v.number(),
@@ -18,6 +28,7 @@ export default defineSchema({
   })
     .index("by_category", ["categoryId"])
     .index("by_body", ["body"]),
+
   holdings: defineTable({
     itemId: v.id("items"),
     user: v.string(),
