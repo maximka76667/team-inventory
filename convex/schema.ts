@@ -23,7 +23,7 @@ export default defineSchema({
   items: defineTable({
     body: v.string(),
     totalCount: v.number(),
-    createdBy: v.union(v.string(), v.null()),
+    createdBy: v.id("users"),
     categoryId: v.union(v.id("categories"), v.null()),
   })
     .index("by_category", ["categoryId"])
@@ -31,9 +31,9 @@ export default defineSchema({
 
   holdings: defineTable({
     itemId: v.id("items"),
-    user: v.string(),
+    userId: v.id("users"),
     count: v.number(),
   })
     .index("by_item", ["itemId"])
-    .index("by_user", ["user"]),
+    .index("by_user", ["userId"]),
 });
