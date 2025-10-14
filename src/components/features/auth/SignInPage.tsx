@@ -3,9 +3,47 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function SignInPage() {
   const { signIn } = useAuthActions();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    const errorMessage =
+      searchParams.get("error_description") || searchParams.get("message");
+
+    if (errorParam || errorMessage) {
+      setError(
+        errorMessage ||
+          "Access denied. Your email is not authorized. Contact your team admin."
+      );
+
+      // Clean up URL
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, router]);
+
+  const handleSignIn = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await signIn("github");
+    } catch (err) {
+      setIsLoading(false);
+      // Extract the error message from the thrown error
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Authentication failed. Please try again.";
+      setError(errorMessage);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -19,7 +57,8 @@ export function SignInPage() {
 
         <div className="space-y-4">
           <Button
-            onClick={() => void signIn("github")}
+            onClick={handleSignIn}
+            disabled={isLoading}
             className="w-full"
             size="lg"
           >
