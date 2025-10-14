@@ -36,9 +36,9 @@ export const { auth, signIn, signOut, store } = convexAuth({
 
       console.log("Found allowed user:", allowedUser._id);
 
-      // User is approved! Update their tokenIdentifier to link accounts
-      const tokenIdentifier =
-        args.existingUserId ?? args.tokenIdentifier ?? email;
+      const tokenIdentifier = args.tokenIdentifier;
+
+      console.log("tokenIdentifier:", tokenIdentifier);
 
       await ctx.db.patch(allowedUser._id, {
         name: args.profile?.name ?? allowedUser.name,
@@ -55,20 +55,20 @@ export const { auth, signIn, signOut, store } = convexAuth({
  * Throws error if not authenticated
  */
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
-  const identity = await ctx.auth.getUserIdentity();
+  const userId = await getAuthUserId(ctx);
 
-  if (!identity) {
+  if (!userId) {
     throw new Error("Not authenticated");
   }
 
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_token", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier)
-    )
-    .first();
+  // Get the full user object
+  const user = await ctx.db.get(userId);
 
-  if (!user || !user.approved) {
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!user.approved) {
     throw new Error("User not authorized");
   }
 
@@ -78,40 +78,36 @@ export async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
 export const currentUser = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      return null;
-    }
-    return await ctx.db.get(userId);
+    return await getCurrentUser(ctx);
   },
 });
 
 /**
  * Get current user (returns null if not authenticated)
  */
-export async function getCurrentUserOrNull(ctx: QueryCtx | MutationCtx) {
-  const identity = await ctx.auth.getUserIdentity();
+// export async function getCurrentUserOrNull(ctx: QueryCtx | MutationCtx) {
+//   const identity = await ctx.auth.getUserIdentity();
 
-  console.log("getCurrentUserOrNull - identity:", identity);
+//   console.log("getCurrentUserOrNull - identity:", identity);
 
-  if (!identity) return null;
+//   if (!identity) return null;
 
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_token", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier)
-    )
-    .first();
+//   const user = await ctx.db
+//     .query("users")
+//     .withIndex("by_token", (q) =>
+//       q.eq("tokenIdentifier", identity.tokenIdentifier)
+//     )
+//     .first();
 
-  console.log("getCurrentUserOrNull - found user:", user);
+//   console.log("getCurrentUserOrNull - found user:", user);
 
-  return user;
-}
+//   return user;
+// }
 
 // Query to get current user info
-export const viewer = query({
-  args: {},
-  handler: async (ctx) => {
-    return await getCurrentUserOrNull(ctx);
-  },
-});
+// export const viewer = query({
+//   args: {},
+//   handler: async (ctx) => {
+//     return await getCurrentUserOrNull(ctx);
+//   },
+// });
