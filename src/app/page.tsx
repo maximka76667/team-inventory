@@ -16,7 +16,6 @@ import { SignInPage } from "@/components/features/auth/SignInPage";
 
 export default function Home() {
   const { isLoading } = useConvexAuth();
-  const user = useQuery(api.auth.currentUser);
 
   // Show loading state
   if (isLoading) {
@@ -35,24 +34,18 @@ export default function Home() {
       <Unauthenticated>
         <SignInPage />
       </Unauthenticated>
-      {user ? (
-        <Authenticated>
-          <SkipToContent />
-          <PageContainer>
-            <AppHeader
-              title="Team Inventory"
-              description={`Welcome back, ${user?.name} (${user?.email})!`}
-            />
 
-            <main id="main-content">
-              <InventoryClient />
-            </main>
-          </PageContainer>
-          <AppFooter />
-        </Authenticated>
-      ) : (
-        <p>AccessDenied</p>
-      )}
+      <Authenticated>
+        <SkipToContent />
+        <PageContainer>
+          <AppHeader title="Team Inventory" description={`Welcome back!`} />
+
+          <main id="main-content">
+            <InventoryClient />
+          </main>
+        </PageContainer>
+        <AppFooter />
+      </Authenticated>
     </>
   );
 }

@@ -27,7 +27,6 @@ import ItemDetails from "./ItemDetails";
 
 interface ItemCellProps {
   item: Item;
-  user: string;
   onTake: (
     count: number
   ) => Promise<{ success: boolean; newHeldCount: number }>;
@@ -41,7 +40,6 @@ interface ItemCellProps {
 
 export default function ItemCell({
   item,
-  user,
   onTake,
   onReturn,
   onRemoveUnits,

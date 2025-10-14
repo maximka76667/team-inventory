@@ -21,17 +21,8 @@ interface InventoryGridProps {
   items: Item[] | undefined;
   selectedCategory: string;
   categories: any[];
-  user: string;
-  onTake: (params: {
-    itemId: Id<"items">;
-    user: string;
-    count: number;
-  }) => Promise<any>;
-  onReturn: (params: {
-    itemId: Id<"items">;
-    user: string;
-    count: number;
-  }) => Promise<any>;
+  onTake: (params: { itemId: Id<"items">; count: number }) => Promise<any>;
+  onReturn: (params: { itemId: Id<"items">; count: number }) => Promise<any>;
   onRemoveUnits: (params: {
     itemId: Id<"items">;
     count: number;
@@ -42,7 +33,6 @@ export default function InventoryGrid({
   items,
   selectedCategory,
   categories,
-  user,
   onTake,
   onReturn,
   onRemoveUnits,
@@ -89,12 +79,9 @@ export default function InventoryGrid({
               <div key={item._id} className="w-full">
                 <ItemCell
                   item={item}
-                  user={user}
-                  onTake={async (count) =>
-                    onTake({ itemId: item._id, user, count })
-                  }
+                  onTake={async (count) => onTake({ itemId: item._id, count })}
                   onReturn={async (count) =>
-                    onReturn({ itemId: item._id, user, count })
+                    onReturn({ itemId: item._id, count })
                   }
                   onRemoveUnits={async (count) =>
                     onRemoveUnits({ itemId: item._id, count })

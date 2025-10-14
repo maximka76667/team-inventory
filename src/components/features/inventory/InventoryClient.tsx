@@ -29,8 +29,7 @@ export default function InventoryClient() {
     removeItemUnits,
   } = useInventory();
 
-  // User state
-  const [user, setUser] = useState<string>("Max");
+  const user = useQuery(api.auth.currentUser);
 
   // Create item form state
   const [newItemText, setNewItemText] = useState<string>("");
@@ -67,7 +66,6 @@ export default function InventoryClient() {
 
     await addItem({
       body,
-      user,
       count: newItemCount || 1,
       categoryId:
         createCategoryId === "other"
@@ -93,7 +91,6 @@ export default function InventoryClient() {
           {/* User Selection & Filters */}
           <InventoryFilters
             user={user}
-            setUser={setUser}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             selectedCategory={selectedCategory}
@@ -124,7 +121,6 @@ export default function InventoryClient() {
         items={searchFilteredItems}
         selectedCategory={selectedCategory}
         categories={categories}
-        user={user}
         onTake={takeItem}
         onReturn={returnItem}
         onRemoveUnits={removeItemUnits}

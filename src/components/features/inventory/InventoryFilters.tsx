@@ -9,10 +9,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Id } from "../../../../convex/_generated/dataModel";
 
 interface InventoryFiltersProps {
-  user: string;
-  setUser: (user: string) => void;
+  user:
+    | {
+        _id: Id<"users">;
+        _creationTime: number;
+        role?: string | undefined;
+        approved?: boolean | undefined;
+        name: string;
+        email: string;
+        tokenIdentifier: string;
+      }
+    | null
+    | undefined;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   selectedCategory: string;
@@ -24,7 +35,7 @@ interface InventoryFiltersProps {
 
 export default function InventoryFilters({
   user,
-  setUser,
+  // setUser,
   searchQuery,
   setSearchQuery,
   selectedCategory,
@@ -40,8 +51,8 @@ export default function InventoryFilters({
         <Input
           id="user"
           placeholder="Enter your name"
-          value={user}
-          onChange={(e) => setUser(e.currentTarget.value)}
+          value={user?.name}
+          // onChange={(e) => setUser(e.currentTarget.value)}
         />
       </div>
 
