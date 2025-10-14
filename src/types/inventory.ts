@@ -1,5 +1,15 @@
 import { Id } from "../../convex/_generated/dataModel";
 
+export interface User {
+  _id: Id<"users">;
+  _creationTime: number;
+  role?: string | undefined;
+  approved?: boolean | undefined;
+  name: string;
+  email: string;
+  tokenIdentifier: string;
+}
+
 export interface Item {
   _id: Id<"items">;
   body: string;
@@ -15,6 +25,6 @@ export interface Category {
 
 export interface Holding {
   _id: Id<"holdings">;
-  user: string;
+  userId: Id<"users">;
   count: number;
 }
