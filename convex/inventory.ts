@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { getCurrentUser } from "./auth";
 
 // ============================================================================
 // Helper Functions
@@ -94,11 +95,17 @@ export const getItemDetails = query({
 export const addItem = mutation({
   args: {
     body: v.string(),
-    user: v.string(),
     categoryId: v.union(v.id("categories"), v.null()),
     count: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity === null) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+
+    const userId = (await getCurrentUser(ctx))._id;
+
     const count = normalizeCount(args.count);
 
     // Check if item already exists (upsert by body)
@@ -118,7 +125,7 @@ export const addItem = mutation({
     return await ctx.db.insert("items", {
       body: args.body,
       totalCount: count,
-      createdBy: args.user,
+      createdBy: userId,
       categoryId: args.categoryId,
     });
   },
@@ -130,6 +137,11 @@ export const removeItemUnits = mutation({
     count: v.optional(v.number()),
   },
   handler: async (ctx, { itemId, count }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity === null) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+
     const item = await ctx.db.get(itemId);
     if (!item) throw new Error("Item not found");
 
@@ -159,10 +171,16 @@ export const removeItemUnits = mutation({
 export const takeItem = mutation({
   args: {
     itemId: v.id("items"),
-    user: v.string(),
     count: v.optional(v.number()),
   },
-  handler: async (ctx, { itemId, user, count }) => {
+  handler: async (ctx, { itemId, count }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity === null) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+
+    const userId = (await getCurrentUser(ctx))._id;
+
     const item = await ctx.db.get(itemId);
     if (!item) throw new Error("Item not found");
 
@@ -180,7 +198,7 @@ export const takeItem = mutation({
       .withIndex("by_item", (q) => q.eq("itemId", itemId))
       .collect();
 
-    const myHolding = holdings.find((h) => h.user === user);
+    const myHolding = holdings.find((h) => h.userId === userId);
 
     if (myHolding) {
       await ctx.db.patch(myHolding._id, {
@@ -189,7 +207,7 @@ export const takeItem = mutation({
     } else {
       await ctx.db.insert("holdings", {
         itemId,
-        user,
+        userId,
         count: takeCount,
       });
     }
@@ -201,15 +219,21 @@ export const takeItem = mutation({
 export const returnItem = mutation({
   args: {
     itemId: v.id("items"),
-    user: v.string(),
     count: v.optional(v.number()),
   },
-  handler: async (ctx, { itemId, user, count }) => {
+  handler: async (ctx, { itemId, count }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity === null) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+
+    const userId = (await getCurrentUser(ctx))._id;
+
     const returnCount = normalizeCount(count);
 
     const myHolding = await ctx.db
       .query("holdings")
-      .withIndex("by_user", (q) => q.eq("user", user))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("itemId"), itemId))
       .first();
 
@@ -250,11 +274,23 @@ export const setItemCategory = mutation({
 // ============================================================================
 
 export const getHoldingsByUser = query({
-  args: { user: v.string() },
-  handler: async (ctx, { user }) => {
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (identity === null) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+
+    console.log("getHoldingsByUser - identity:", identity);
+
+    const userId = (await getCurrentUser(ctx))._id;
+
+    console.log("getHoldingsByUser - userId:", userId);
+
     const holdings = await ctx.db
       .query("holdings")
-      .withIndex("by_user", (q) => q.eq("user", user))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
     // Enrich with item details
