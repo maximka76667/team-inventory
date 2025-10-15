@@ -4,6 +4,9 @@ import { User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Holding, Item } from "@/types/inventory";
+import { getCurrentUser } from "../../../../convex/auth";
+import { api } from "../../../../convex/_generated/api";
+import { useQuery } from "convex/react";
 
 interface ItemDetailsProps {
   details:
@@ -51,23 +54,25 @@ export default function ItemDetails({ details, item }: ItemDetailsProps) {
           </div>
         ) : (
           <div className="space-y-2" role="list" aria-label="Holdings list">
-            {details.holdings.map((holding: Holding) => (
-              <div
-                key={holding._id}
-                className="flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors"
-                role="listitem"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
+            {details.holdings.map((holding: Holding) => {
+              return (
+                <div
+                  key={holding._id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors"
+                  role="listitem"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="font-medium">{holding.userName}</span>
                   </div>
-                  <span className="font-medium">{holding.user}</span>
+                  <Badge variant="secondary" className="font-semibold">
+                    {holding.count} {holding.count === 1 ? "unit" : "units"}
+                  </Badge>
                 </div>
-                <Badge variant="secondary" className="font-semibold">
-                  {holding.count} {holding.count === 1 ? "unit" : "units"}
-                </Badge>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

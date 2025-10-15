@@ -26,5 +26,6 @@ export interface Category {
 export interface Holding {
   _id: Id<"holdings">;
   userId: Id<"users">;
+  userName: string;
   count: number;
 }

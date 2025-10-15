@@ -8,9 +8,9 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     tokenIdentifier: v.string(),
+    email: v.string(),
     approved: v.optional(v.boolean()),
     role: v.optional(v.string()),
-    email: v.string(),
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_email", ["email"]),
@@ -32,6 +32,7 @@ export default defineSchema({
   holdings: defineTable({
     itemId: v.id("items"),
     userId: v.id("users"),
+    userName: v.string(),
     count: v.number(),
   })
     .index("by_item", ["itemId"])

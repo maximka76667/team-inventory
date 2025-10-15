@@ -2,6 +2,7 @@ import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import { query, mutation } from "./_generated/server";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import GitHub from "@auth/core/providers/github";
+import { v } from "convex/values";
 
 export const { auth, signIn, signOut, store } = convexAuth({
   providers: [
@@ -24,6 +25,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
       // First, check if this email is in the allowlist
       const allowedUser = await ctx.db
         .query("users")
+        // @ts-ignore-next-line
         .withIndex("by_email", (q) => q.eq("email", email))
         .first();
 
@@ -36,7 +38,8 @@ export const { auth, signIn, signOut, store } = convexAuth({
 
       console.log("Found allowed user:", allowedUser._id);
 
-      const tokenIdentifier = args.tokenIdentifier;
+      const subject = args.profile.email ?? args.profile.phone;
+      const tokenIdentifier = `${args.provider.id}|${subject}`;
 
       console.log("tokenIdentifier:", tokenIdentifier);
 
@@ -82,32 +85,34 @@ export const currentUser = query({
   },
 });
 
-/**
- * Get current user (returns null if not authenticated)
- */
-// export async function getCurrentUserOrNull(ctx: QueryCtx | MutationCtx) {
-//   const identity = await ctx.auth.getUserIdentity();
+export const updateUserName = mutation({
+  args: {
+    userId: v.id("users"),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getCurrentUser(ctx);
 
-//   console.log("getCurrentUserOrNull - identity:", identity);
+    if (currentUser._id !== args.userId) {
+      throw new Error("You are not authorized to update this user's name");
+    }
 
-//   if (!identity) return null;
+    const { userId, newName } = args;
 
-//   const user = await ctx.db
-//     .query("users")
-//     .withIndex("by_token", (q) =>
-//       q.eq("tokenIdentifier", identity.tokenIdentifier)
-//     )
-//     .first();
+    // Update the user's name
+    await ctx.db.patch(userId, { name: newName });
 
-//   console.log("getCurrentUserOrNull - found user:", user);
+    // Find all holdings for this user
+    const holdings = await ctx.db
+      .query("holdings")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
 
-//   return user;
-// }
+    // Update userName in all holdings
+    for (const holding of holdings) {
+      await ctx.db.patch(holding._id, { userName: newName });
+    }
 
-// Query to get current user info
-// export const viewer = query({
-//   args: {},
-//   handler: async (ctx) => {
-//     return await getCurrentUserOrNull(ctx);
-//   },
-// });
+    return { success: true, updatedHoldings: holdings.length };
+  },
+});

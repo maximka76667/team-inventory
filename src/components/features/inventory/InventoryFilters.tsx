@@ -35,7 +35,6 @@ interface InventoryFiltersProps {
 
 export default function InventoryFilters({
   user,
-  // setUser,
   searchQuery,
   setSearchQuery,
   selectedCategory,
@@ -52,7 +51,8 @@ export default function InventoryFilters({
           id="user"
           placeholder="Enter your name"
           value={user?.name}
-          // onChange={(e) => setUser(e.currentTarget.value)}
+          readOnly
+          disabled
         />
       </div>
 

@@ -179,7 +179,9 @@ export const takeItem = mutation({
       throw new Error("Unauthenticated call to mutation");
     }
 
-    const userId = (await getCurrentUser(ctx))._id;
+    const currentUser = await getCurrentUser(ctx);
+    const userId = currentUser._id;
+    const userName = currentUser.name;
 
     const item = await ctx.db.get(itemId);
     if (!item) throw new Error("Item not found");
@@ -208,6 +210,7 @@ export const takeItem = mutation({
       await ctx.db.insert("holdings", {
         itemId,
         userId,
+        userName,
         count: takeCount,
       });
     }
