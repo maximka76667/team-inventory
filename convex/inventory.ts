@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { getCurrentUser } from "./auth";
+import { paginationOptsValidator } from "convex/server";
 
 // ============================================================================
 // Helper Functions
@@ -85,6 +86,70 @@ export const getItemDetails = query({
     const available = Math.max(0, item.totalCount - held);
 
     return { item, holdings, available };
+  },
+});
+
+// Add this new unified query
+export const searchItems = query({
+  args: {
+    searchQuery: v.optional(v.string()),
+    categoryId: v.optional(
+      v.union(v.id("categories"), v.null(), v.literal("all"))
+    ),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, { searchQuery, categoryId, paginationOpts }) => {
+    let result;
+
+    // If there's a search query, use search index
+    if (searchQuery && searchQuery.trim()) {
+      const searchResults = await ctx.db
+        .query("items")
+        .withSearchIndex("search_body", (q) => {
+          let search = q.search("body", searchQuery);
+
+          // Apply category filter if specified
+          if (categoryId && categoryId !== "all") {
+            search = search.eq(
+              "categoryId",
+              categoryId === "other" ? null : categoryId
+            );
+          }
+
+          return search;
+        })
+        .paginate(paginationOpts);
+
+      result = searchResults;
+    }
+    // If category filter but no search
+    else if (categoryId && categoryId !== "all") {
+      result = await ctx.db
+        .query("items")
+        .withIndex("by_category", (q) =>
+          q.eq(
+            "categoryId",
+            categoryId === "other" ? null : (categoryId as any)
+          )
+        )
+        .order("desc")
+        .paginate(paginationOpts);
+    }
+    // No filters, just get all items
+    else {
+      result = await ctx.db
+        .query("items")
+        .order("desc")
+        .paginate(paginationOpts);
+    }
+
+    // Enrich with availability info
+    const enrichedPage = await enrichItemsWithAvailability(ctx, result.page);
+
+    return {
+      ...result,
+      page: enrichedPage,
+    };
   },
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
   Card,
@@ -40,23 +40,21 @@ export default function InventoryClient() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const filteredItems = useQuery(
-    api.inventory.getItemsByCategory,
-    selectedCategory === "all"
-      ? "skip"
-      : {
-          categoryId:
-            selectedCategory === "other"
-              ? null
-              : (selectedCategory as Id<"categories"> | null),
-        }
-  );
-
-  const displayItems = selectedCategory === "all" ? items : filteredItems;
-
-  // Apply search filter on top of category filter
-  const searchFilteredItems = displayItems?.filter((item: Item) =>
-    item.body.toLowerCase().includes(searchQuery.toLowerCase())
+  // Use paginated query with both filters
+  const {
+    results: searchFilteredItems,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.inventory.searchItems,
+    {
+      searchQuery: searchQuery || undefined,
+      categoryId:
+        selectedCategory === "other"
+          ? null
+          : (selectedCategory as Id<"categories"> | null),
+    },
+    { initialNumItems: 20 }
   );
 
   const handleAddItem = async (e: React.FormEvent) => {
@@ -124,6 +122,8 @@ export default function InventoryClient() {
         onTake={takeItem}
         onReturn={returnItem}
         onRemoveUnits={removeItemUnits}
+        onLoadMore={loadMore}
+        status={status}
       />
     </>
   );

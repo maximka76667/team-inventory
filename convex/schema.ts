@@ -9,8 +9,8 @@ export default defineSchema({
     name: v.string(),
     tokenIdentifier: v.string(),
     email: v.string(),
-    approved: v.optional(v.boolean()),
-    role: v.optional(v.string()),
+    approved: v.boolean(),
+    role: v.string(),
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_email", ["email"]),
@@ -27,7 +27,11 @@ export default defineSchema({
     categoryId: v.union(v.id("categories"), v.null()),
   })
     .index("by_category", ["categoryId"])
-    .index("by_body", ["body"]),
+    .index("by_body", ["body"])
+    .searchIndex("search_body", {
+      searchField: "body",
+      filterFields: ["categoryId"],
+    }),
 
   holdings: defineTable({
     itemId: v.id("items"),
